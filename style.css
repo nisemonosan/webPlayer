@@ -1,0 +1,425 @@
+/* ===== Apple Music風 UI ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  /* 色 */
+  --bg: #000000;
+  --bg-glass: rgba(28, 28, 30, 0.72);
+  --bg-surface: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text: #ffffff;
+  --text-dim: rgba(255, 255, 255, 0.6);
+  --text-far: rgba(255, 255, 255, 0.28);
+  --text-faint: rgba(255, 255, 255, 0.15);
+
+  /* セーフエリア */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* コントローラー高さ（JSで動的更新） */
+  --controller-h: 180px;
+
+  /* アニメーションカーブ */
+  --ease-spring: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ===== ヘッダー（簡素化） ===== */
+.app-header {
+  padding: calc(var(--safe-top) + 14px) 16px 12px;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-header h1 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ファイルボタン */
+.file-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.file-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  user-select: none;
+}
+
+.file-btn:active {
+  transform: scale(0.96);
+  background: var(--bg-surface);
+}
+
+.file-btn.loaded {
+  border-color: var(--text);
+  color: var(--text);
+  background: var(--bg-surface);
+}
+
+.file-btn.loaded::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text);
+  margin-right: 6px;
+}
+
+/* ===== メイン: 歌詞エリア（フルブリード） ===== */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  padding-bottom: calc(var(--controller-h) + var(--safe-bottom) + 16px);
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.lyrics-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ヘッダー廃止 - 歌詞直接表示 */
+
+.lyrics-list {
+  list-style: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  padding: 12px 20px;
+}
+
+.lyrics-list li {
+  display: flex;
+  gap: 16px;
+  padding: 14px 0;
+  cursor: pointer;
+  transition: all 0.45s var(--ease-spring);
+  align-items: flex-start;
+}
+
+/* Apple Music風歌詞階層 */
+.lyrics-list li.current {
+  transform: scale(1);
+}
+
+.lyrics-list li.current .lyric-time {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.lyrics-list li.current .lyric-text {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.lyrics-list li.near .lyric-text {
+  color: var(--text-dim);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+.lyrics-list li.far .lyric-text {
+  color: var(--text-far);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+/* 初期状態（未再生時）は全てnear相当に */
+.lyrics-list li:not(.current):not(.near):not(.far) .lyric-text {
+  color: var(--text-far);
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.lyric-time {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+  min-width: 54px;
+  padding-top: 3px;
+  transition: color 0.45s var(--ease-spring);
+}
+
+.lyric-text {
+  flex: 1;
+  word-break: break-word;
+  transition: all 0.45s var(--ease-spring);
+}
+
+.lyrics-empty {
+  color: var(--text-far) !important;
+  justify-content: center;
+  cursor: default !important;
+  padding: 40px 0 !important;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+/* ===== フローティングコントローラー ===== */
+.floating-controller {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--border-subtle);
+  padding: 14px 18px calc(var(--safe-bottom) + 14px);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.5s var(--ease-spring);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.controller-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.track-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 1.2em;
+  letter-spacing: -0.01em;
+}
+
+/* 再生ボタン + シークバー */
+.seek-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.play-btn {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring), opacity 0.2s;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.12);
+}
+
+.play-btn:active {
+  transform: scale(0.88);
+}
+
+.play-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+#play-icon {
+  transform: translateX(2px);
+  transition: transform 0.15s var(--ease-spring);
+}
+
+.play-btn.playing #play-icon {
+  transform: translateX(0);
+}
+
+/* シークバー（シンプルな太線） */
+.seek-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+#seek {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px; /* タップ領域 */
+  background: transparent;
+  cursor: pointer;
+}
+
+/* トラックと進行フィル */
+#seek::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  margin-top: -7px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Firefox */
+#seek::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#seek::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+#seek:disabled::-webkit-slider-thumb {
+  background: var(--text-far);
+}
+
+#seek:disabled::-moz-range-thumb {
+  background: var(--text-far);
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px;
+  font-weight: 500;
+}
+
+/* 速度プリセット（ピル型セグメント） */
+.speed-buttons {
+  display: flex;
+  background: var(--bg-surface);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+  justify-content: space-between;
+}
+
+.speed-buttons button {
+  flex: 1;
+  min-height: 38px;
+  background: transparent;
+  border: none;
+  border-radius: 17px;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-spring);
+  padding: 8px 6px;
+}
+
+.speed-buttons button:active {
+  transform: scale(0.95);
+}
+
+.speed-buttons button.active {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== タブレット/デスクトップ ===== */
+@media (min-width: 720px) {
+  .lyrics-list {
+    padding: 16px 32px;
+  }
+
+  .play-btn {
+    width: 68px;
+    height: 68px;
+    font-size: 28px;
+  }
+}

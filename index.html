@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>WebPlayer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>WebPlayer</h1>
+    <div class="file-section">
+      <label class="file-btn">
+        <input type="file" id="mp3-input" accept="audio/mpeg,.mp3,audio/*" hidden>
+        <span>MP3を選択</span>
+      </label>
+      <label class="file-btn">
+        <input type="file" id="csv-input" accept=".csv,text/csv,text/plain" hidden>
+        <span>歌詞CSV</span>
+      </label>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="lyrics-section">
+      <ul class="lyrics-list" id="lyrics-list">
+        <li class="lyrics-empty">CSVを読み込むと歌詞が表示されます</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- フローティングコントローラー（常時表示） -->
+  <div class="floating-controller" id="floating-controller">
+    <div class="controller-inner">
+      <div class="track-name" id="track-name">MP3未選択</div>
+
+      <div class="seek-row">
+        <button id="play-btn" class="play-btn" disabled aria-label="再生">
+          <span id="play-icon">▶</span>
+        </button>
+        <div class="seek-wrap">
+          <input type="range" id="seek" min="0" max="1000" value="0" step="1" disabled aria-label="シークバー">
+          <div class="time-row">
+            <span id="current-time">0:00</span>
+            <span id="duration-time">0:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="speed-buttons" id="speed-buttons">
+        <button data-rate="0.5">0.5x</button>
+        <button data-rate="0.75">0.75x</button>
+        <button data-rate="1" class="active">1.0x</button>
+        <button data-rate="1.25">1.25x</button>
+        <button data-rate="1.5">1.5x</button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audio" preload="metadata"></audio>
+
+  <script src="app.js"></script>
+</body>
+</html>
