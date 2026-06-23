@@ -411,6 +411,306 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* ===== メトロノームセクション ===== */
+.metronome-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 8px 0 0;
+}
+
+/* ヘッダー行 */
+.metronome-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 0;
+  gap: 12px;
+}
+
+/* 設定ボタン（ラベル + サマリー） */
+.metro-settings-btn {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: opacity 0.2s var(--ease-spring);
+}
+
+.metro-settings-btn:active {
+  opacity: 0.6;
+}
+
+.metro-settings-btn:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.metronome-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.metro-summary {
+  font-size: 12px;
+  color: var(--text-far);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* iOSトグル */
+.metro-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.metro-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.metro-switch-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  transition: background-color 0.25s var(--ease-spring);
+}
+
+.metro-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  background-color: var(--text);
+  border-radius: 50%;
+  transition: transform 0.25s var(--ease-spring);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.metro-switch input:checked + .metro-switch-track {
+  background-color: rgba(52, 199, 89, 0.8);
+}
+
+.metro-switch input:checked + .metro-switch-track .metro-switch-thumb {
+  transform: translateX(20px);
+  background-color: #fff;
+}
+
+/* ===== メトロノーム設定ボトムシート ===== */
+.metro-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease-spring), visibility 0.3s;
+  z-index: 200;
+}
+
+.metro-sheet-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.metro-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 20px calc(var(--safe-bottom) + 24px);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+  transform: translateY(100%);
+  transition: transform 0.35s var(--ease-spring);
+  z-index: 201;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.metro-sheet.open {
+  transform: translateY(0);
+}
+
+.metro-sheet-handle {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--text-faint);
+  margin: 0 auto 12px;
+}
+
+.metro-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.metro-sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.metro-sheet-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.metro-sheet-close:active {
+  transform: scale(0.9);
+  background: var(--border-subtle);
+}
+
+.metro-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.metro-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metro-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* セグメントコントロール */
+.metro-segmented {
+  display: flex;
+  background: var(--bg-surface);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.metro-segmented button {
+  flex: 1;
+  min-height: 38px;
+  background: transparent;
+  border: none;
+  border-radius: 17px;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-spring);
+  padding: 8px 6px;
+}
+
+.metro-segmented button:active {
+  transform: scale(0.95);
+}
+
+.metro-segmented button.active {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* スライダー行 */
+.metro-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metro-slider-label {
+  font-size: 13px;
+  color: var(--text-dim);
+  min-width: 48px;
+  font-weight: 500;
+}
+
+.metro-slider-value {
+  font-size: 13px;
+  color: var(--text-dim);
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#metronome-bpm, #metronome-volume {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* BPM/音量スライダートラック */
+#metronome-bpm::-webkit-slider-runnable-track,
+#metronome-volume::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#metronome-bpm::-webkit-slider-thumb,
+#metronome-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  margin-top: -7px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+#metronome-bpm::-moz-range-track,
+#metronome-volume::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#metronome-bpm::-moz-range-thumb,
+#metronome-volume::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
 /* ===== タブレット/デスクトップ ===== */
 @media (min-width: 720px) {
   .lyrics-list {

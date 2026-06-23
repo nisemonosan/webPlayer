@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>WebPlayer</title>
+  <title>うぇっぷ</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="app-header">
-    <h1>WebPlayer</h1>
+    <h1>うぇっぷ</h1>
     <div class="file-section">
       <label class="file-btn">
         <input type="file" id="mp3-input" accept="audio/mpeg,.mp3,audio/*" hidden>
@@ -56,6 +56,58 @@
         <button data-rate="1" class="active">1.0x</button>
         <button data-rate="1.25">1.25x</button>
         <button data-rate="1.5">1.5x</button>
+      </div>
+
+      <div class="metronome-section" id="metronome-section">
+        <!-- コンパクトヘッダー行: 設定ボタン + サマリー + iOSトグル -->
+        <div class="metronome-header">
+          <button class="metro-settings-btn" id="metro-open-btn" disabled>
+            <span class="metronome-label">メトロノーム</span>
+            <span class="metro-summary" id="metro-summary">A · 4 · 120</span>
+          </button>
+          <label class="metro-switch">
+            <input type="checkbox" id="metronome-toggle">
+            <span class="metro-switch-track"><span class="metro-switch-thumb"></span></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- メトロノーム設定ボトムシート -->
+  <div class="metro-sheet-backdrop" id="metro-backdrop"></div>
+  <div class="metro-sheet" id="metro-sheet">
+    <div class="metro-sheet-handle"></div>
+    <div class="metro-sheet-header">
+      <span class="metro-sheet-title">メトロノーム</span>
+      <button class="metro-sheet-close" id="metro-close-btn" aria-label="閉じる">✕</button>
+    </div>
+    <div class="metro-sheet-body">
+      <div class="metro-field">
+        <span class="metro-field-label">モード</span>
+        <div class="metro-segmented" id="metronome-mode">
+          <button data-mode="A">カウント</button>
+          <button data-mode="B">並行</button>
+          <button data-mode="C">両方</button>
+        </div>
+      </div>
+      <div class="metro-field">
+        <span class="metro-field-label">拍数</span>
+        <div class="metro-segmented" id="metronome-beats">
+          <button data-beats="3">3拍</button>
+          <button data-beats="4" class="active">4拍</button>
+          <button data-beats="6">6拍</button>
+        </div>
+      </div>
+      <div class="metro-slider-row">
+        <span class="metro-slider-label">BPM</span>
+        <input type="range" id="metronome-bpm" min="40" max="240" value="120">
+        <span class="metro-slider-value" id="metronome-bpm-value">120</span>
+      </div>
+      <div class="metro-slider-row">
+        <span class="metro-slider-label">音量</span>
+        <input type="range" id="metronome-volume" min="0" max="100" value="50">
+        <span class="metro-slider-value" id="metronome-volume-value">50%</span>
       </div>
     </div>
   </div>

@@ -15,11 +15,38 @@
   const lyricsList = document.getElementById('lyrics-list');
   const lyricsCount = document.getElementById('lyrics-count');
 
+  // メトロノーム DOM
+  const metronomeToggle = document.getElementById('metronome-toggle');
+  const metroOpenBtn = document.getElementById('metro-open-btn');
+  const metroCloseBtn = document.getElementById('metro-close-btn');
+  const metroBackdrop = document.getElementById('metro-backdrop');
+  const metroSheet = document.getElementById('metro-sheet');
+  const metroSummary = document.getElementById('metro-summary');
+  const metronomeMode = document.getElementById('metronome-mode');
+  const metronomeBeats = document.getElementById('metronome-beats');
+  const metronomeBpm = document.getElementById('metronome-bpm');
+  const metronomeBpmValue = document.getElementById('metronome-bpm-value');
+  const metronomeVolume = document.getElementById('metronome-volume');
+  const metronomeVolumeValue = document.getElementById('metronome-volume-value');
+
   // ===== 状態 =====
   let lyrics = []; // {time: number(秒), raw: "mm:ss.xxx", text: string}
   let currentLyricIndex = -1;
   let isSeeking = false;
   let currentObjectURL = null;
+
+  // メトロノーム状態
+  let metronomeEnabled = false;
+  let metronomeModeValue = 'A';
+  let bpm = 120;
+  let metronomeVol = 0.5;  // 0.0 - 1.0
+  let beatsPerMeasure = 4;
+  let audioCtx = null;          // 遅延初期化
+  let schedulerTimer = null;    // setInterval ID
+  let nextNoteTime = 0;         // 次クリックの AudioContext 時刻
+  let currentBeat = 0;          // 小節内の拍位置 (0..beats-1)
+  let isCountingIn = false;     // カウントイン中フラグ
+  let pendingAudioStart = false;// カウントイン後に音楽を始めるべきか
 
   // ===== ユーティリティ: 時間フォーマット =====
   function formatTime(sec) {
@@ -27,17 +54,6 @@
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return m + ':' + String(s).padStart(2, '0');
-  }
-
-  // ===== シークバー進行率の動的背景（Apple風プログレスバー） =====
-  function updateSeekFill() {
-    if (!seek) return;
-    const min = parseFloat(seek.min) || 0;
-    const max = parseFloat(seek.max) || 1000;
-    const val = parseFloat(seek.value) || 0;
-    const pct = ((val - min) / (max - min)) * 100;
-    seek.style.background =
-      `linear-gradient(to right, #fff 0%, #fff ${pct}%, rgba(255,255,255,0.15) ${pct}%, rgba(255,255,255,0.15) 100%)`;
   }
 
   // ===== ピッチ維持設定（ブラウザ互換） =====
@@ -111,6 +127,70 @@
   // タイムコード表示用フォーマット（入力値を維持しつつ正規化）
   function formatTimecodeLabel(sec) {
     return formatTime(sec);
+  }
+
+  // ===== メトロノーム =====
+  function ensureAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function clickAt(ctx, time, isDownbeat) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = isDownbeat ? 1000 : 800;
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(metronomeVol, time + 0.001);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.05);
+  }
+
+  const LOOKAHEAD_MS = 25;
+  const SCHEDULE_AHEAD = 0.1;
+
+  function scheduler() {
+    const ctx = ensureAudioCtx();
+    while (nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD) {
+      clickAt(ctx, nextNoteTime, currentBeat === 0);
+      const secondsPerBeat = 60.0 / bpm;
+      nextNoteTime += secondsPerBeat;
+      const prevBeat = currentBeat;
+      currentBeat = (currentBeat + 1) % beatsPerMeasure;
+      if (isCountingIn && prevBeat === beatsPerMeasure - 1) {
+        finishCountIn();
+      }
+    }
+  }
+
+  function startMetronome(resetBeat = true) {
+    const ctx = ensureAudioCtx();
+    if (resetBeat) { currentBeat = 0; }
+    nextNoteTime = ctx.currentTime + 0.1;
+    if (schedulerTimer) clearInterval(schedulerTimer);
+    schedulerTimer = setInterval(scheduler, LOOKAHEAD_MS);
+  }
+
+  function stopMetronome() {
+    if (schedulerTimer) { clearInterval(schedulerTimer); schedulerTimer = null; }
+    currentBeat = 0;
+  }
+
+  function finishCountIn() {
+    isCountingIn = false;
+    if (metronomeModeValue === 'A') stopMetronome();
+    if (pendingAudioStart) {
+      pendingAudioStart = false;
+      const p = audio.play();
+      if (p && p.catch) p.catch(() => {});
+    }
+  }
+
+  function playAudioOnly() {
+    const p = audio.play();
+    if (p && p.catch) p.catch(err => console.warn('Play failed:', err));
   }
 
   // ===== CSV解析 =====
@@ -276,14 +356,21 @@
   playBtn.addEventListener('click', () => {
     if (!audio.src) return;
     if (audio.paused) {
-      const p = audio.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch(err => {
-          console.warn('Play failed:', err);
-        });
+      if (!metronomeEnabled) {
+        playAudioOnly();
+      } else if (metronomeModeValue === 'B') {
+        startMetronome(true);
+        playAudioOnly();
+      } else {
+        ensureAudioCtx();
+        isCountingIn = true;
+        pendingAudioStart = true;
+        startMetronome(true);
       }
     } else {
       audio.pause();
+      if (metronomeEnabled && metronomeModeValue !== 'A') stopMetronome();
+      if (isCountingIn) { isCountingIn = false; pendingAudioStart = false; stopMetronome(); }
     }
   });
 
@@ -296,18 +383,17 @@
   audio.addEventListener('pause', () => {
     playIcon.textContent = '▶';
     playBtn.classList.remove('playing');
+    if (metronomeEnabled && metronomeModeValue !== 'A') stopMetronome();
   });
 
   audio.addEventListener('loadedmetadata', () => {
     durationEl.textContent = formatTime(audio.duration);
     seek.max = Math.max(1, Math.floor(audio.duration * 1000));
-    updateSeekFill();
   });
 
   audio.addEventListener('durationchange', () => {
     durationEl.textContent = formatTime(audio.duration);
     seek.max = Math.max(1, Math.floor(audio.duration * 1000));
-    updateSeekFill();
   });
 
   audio.addEventListener('timeupdate', () => {
@@ -321,6 +407,7 @@
   audio.addEventListener('ended', () => {
     playIcon.textContent = '▶';
     playBtn.classList.remove('playing');
+    if (metronomeEnabled && metronomeModeValue !== 'A') stopMetronome();
   });
 
   // ===== イベント: シークバー =====
@@ -329,7 +416,6 @@
     const ms = parseInt(e.target.value, 10);
     const sec = ms / 1000;
     currentTimeEl.textContent = formatTime(sec);
-    updateSeekFill();
   });
 
   // ホバー時も進行フィルを更新（ツマみ拡大時の視覚的フィードバック）
@@ -339,7 +425,6 @@
     const ms = parseInt(e.target.value, 10);
     audio.currentTime = ms / 1000;
     isSeeking = false;
-    updateSeekFill();
     updateCurrentLyric();
   });
 
@@ -348,8 +433,7 @@
     if (isSeeking) {
       audio.currentTime = parseInt(seek.value, 10) / 1000;
       isSeeking = false;
-      updateSeekFill();
-      updateCurrentLyric();
+        updateCurrentLyric();
     }
   });
 
@@ -369,6 +453,81 @@
 
   // 初期ピッチ維持設定
   setPreservesPitch(audio);
+
+  // ===== メトロノーム UI イベント =====
+  // サマリー表示更新
+  function updateMetroSummary() {
+    metroSummary.textContent = metronomeModeValue + ' · ' + beatsPerMeasure + ' · ' + bpm;
+  }
+
+  // トグル（iOSスイッチ）
+  metronomeToggle.addEventListener('change', () => {
+    metronomeEnabled = metronomeToggle.checked;
+    metroOpenBtn.disabled = !metronomeEnabled;
+    if (!metronomeEnabled) {
+      closeMetroSheet();
+      stopMetronome();
+      isCountingIn = false;
+      pendingAudioStart = false;
+    }
+  });
+
+  // ボトムシート開閉
+  function openMetroSheet() {
+    metroSheet.classList.add('open');
+    metroBackdrop.classList.add('open');
+  }
+  function closeMetroSheet() {
+    metroSheet.classList.remove('open');
+    metroBackdrop.classList.remove('open');
+  }
+  metroOpenBtn.addEventListener('click', () => {
+    if (!metronomeEnabled) return;
+    openMetroSheet();
+  });
+  metroCloseBtn.addEventListener('click', closeMetroSheet);
+  metroBackdrop.addEventListener('click', closeMetroSheet);
+
+  // モードセグメント
+  metronomeMode.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    metronomeModeValue = btn.dataset.mode;
+    metronomeMode.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateMetroSummary();
+  });
+
+  // 拍数セグメント
+  metronomeBeats.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-beats]');
+    if (!btn) return;
+    beatsPerMeasure = parseInt(btn.dataset.beats, 10);
+    if (!schedulerTimer) currentBeat = 0;
+    metronomeBeats.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateMetroSummary();
+  });
+
+  // BPM スライダー
+  metronomeBpm.addEventListener('input', (e) => {
+    bpm = parseInt(e.target.value, 10);
+    metronomeBpmValue.textContent = bpm;
+    updateMetroSummary();
+  });
+
+  // 音量スライダー
+  metronomeVolume.addEventListener('input', (e) => {
+    metronomeVol = parseInt(e.target.value, 10) / 100;
+    metronomeVolumeValue.textContent = e.target.value + '%';
+  });
+
+  // ===== シークバー進捗更新 =====
+  function updateSeekFill() {
+    // CSS変数で進捗を設定（将来的なスタイル用）
+    const percent = (seek.value / seek.max) * 100;
+    seek.style.setProperty('--progress', percent + '%');
+  }
 
   // ===== フローティングコントローラー高さをCSS変数へ同期 =====
   // 歌詞リストがコントローラーに隠れないよう、main の padding-bottom を動的調整
