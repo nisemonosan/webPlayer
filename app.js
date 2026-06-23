@@ -46,10 +46,11 @@
   let metronomeEnabled = false;
   let metronomeModeValue = 'A';
   let bpm = 120;
-  let metronomeVol = 0.5;  // 0.0 - 1.0
+  let metronomeVol = 0.75;  // 0.0 - 1.0
   let beatsPerMeasure = 4;
   let audioCtx = null;          // 遅延初期化
   let schedulerTimer = null;    // setInterval ID
+  let countInTimer = null;      // カウントイン完了用 setTimeout ID
   let nextNoteTime = 0;         // 次クリックの AudioContext 時刻
   let currentBeat = 0;          // 小節内の拍位置 (0..beats-1)
   let isCountingIn = false;     // カウントイン中フラグ
@@ -147,8 +148,9 @@
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.frequency.value = isDownbeat ? 1000 : 800;
+    const vol = metronomeVol * 1.5;
     gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(metronomeVol, time + 0.001);
+    gain.gain.linearRampToValueAtTime(vol, time + 0.001);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
     osc.connect(gain).connect(ctx.destination);
     osc.start(time);
@@ -164,11 +166,7 @@
       clickAt(ctx, nextNoteTime, currentBeat === 0);
       const secondsPerBeat = 60.0 / bpm;
       nextNoteTime += secondsPerBeat;
-      const prevBeat = currentBeat;
       currentBeat = (currentBeat + 1) % beatsPerMeasure;
-      if (isCountingIn && prevBeat === beatsPerMeasure - 1) {
-        finishCountIn();
-      }
     }
   }
 
@@ -182,7 +180,31 @@
 
   function stopMetronome() {
     if (schedulerTimer) { clearInterval(schedulerTimer); schedulerTimer = null; }
+    if (countInTimer) { clearTimeout(countInTimer); countInTimer = null; }
     currentBeat = 0;
+  }
+
+  // カウントイン開始: N拍カウント → 次の拍（N+1拍目）で音源再生（クリックなし）
+  function startCountIn() {
+    const ctx = ensureAudioCtx();
+    const secondsPerBeat = 60.0 / bpm;
+    const firstClickTime = ctx.currentTime + 0.1;
+    // N拍カウントの次の拍（クリックなし）で音源開始
+    const audioStartTime = firstClickTime + beatsPerMeasure * secondsPerBeat;
+    // メトロノーム停止タイミング（音源開始の少し手前）
+    const metronomeStopTime = audioStartTime - 0.05;
+    const delayMs = Math.max(0, (metronomeStopTime - ctx.currentTime) * 1000);
+
+    isCountingIn = true;
+    pendingAudioStart = true;
+    startMetronome(true);
+
+    // 音源開始直前: Mode Aはメトロノーム停止、Mode Cは継続
+    countInTimer = setTimeout(() => {
+      countInTimer = null;
+      if (metronomeModeValue === 'A') stopMetronome();
+      finishCountIn(); // audio.play() 呼び出し
+    }, delayMs);
   }
 
   function finishCountIn() {
@@ -298,16 +320,19 @@
     }
   }
 
-  // ===== 歌詞タップでシーク + 再生 =====
+  // ===== 歌詞タップでシーク =====
   function onLyricClick(i) {
     if (!audio.src) return;
     const lyr = lyrics[i];
     if (!lyr) return;
+    const wasPlaying = !audio.paused;
     audio.currentTime = lyr.time;
-    // iOS Safari のアンロック兼、即時再生で現場の体感向上
-    const p = audio.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(() => { /* ユーザーが再生ボタンを押す必要がある場合 */ });
+    // 再生中だった場合のみ再生継続
+    if (wasPlaying) {
+      const p = audio.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => { /* ユーザーが再生ボタンを押す必要がある場合 */ });
+      }
     }
   }
 
@@ -362,6 +387,13 @@
   // ===== イベント: 再生ボタン =====
   playBtn.addEventListener('click', () => {
     if (!audio.src) return;
+    // カウントイン中の押下はキャンセル扱い
+    if (isCountingIn) {
+      isCountingIn = false;
+      pendingAudioStart = false;
+      stopMetronome();
+      return;
+    }
     if (audio.paused) {
       if (!metronomeEnabled) {
         playAudioOnly();
@@ -369,10 +401,8 @@
         startMetronome(true);
         playAudioOnly();
       } else {
-        ensureAudioCtx();
-        isCountingIn = true;
-        pendingAudioStart = true;
-        startMetronome(true);
+        // モードA/C: カウントイン
+        startCountIn();
       }
     } else {
       audio.pause();
@@ -468,7 +498,10 @@
   metronomeToggle.addEventListener('change', () => {
     metronomeEnabled = metronomeToggle.checked;
     metroOpenBtn.disabled = !metronomeEnabled;
-    if (!metronomeEnabled) {
+    if (metronomeEnabled) {
+      // ユーザージェスチャ内で AudioContext を初期化・レジューム
+      ensureAudioCtx();
+    } else {
       closeMetroSheet();
       stopMetronome();
       isCountingIn = false;
