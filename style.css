@@ -60,12 +60,36 @@ body {
   gap: 10px;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .app-header h1 {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
+}
+
+.help-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.help-btn:active {
+  transform: scale(0.9);
+  background: var(--border-subtle);
 }
 
 /* ファイルボタン */
@@ -304,6 +328,38 @@ body {
 
 .play-btn.playing #play-icon {
   transform: translateX(0);
+}
+
+/* SVG再生/停止アイコン */
+.play-icon {
+  width: 28px;
+  height: 28px;
+  transform: translateX(2px);
+  transition: transform 0.15s var(--ease-spring);
+}
+
+.play-btn.playing .play-icon {
+  transform: translateX(0);
+}
+
+.play-icon-shape {
+  transition: opacity 0.15s ease;
+}
+
+.play-shape {
+  opacity: 1;
+}
+
+.pause-shape {
+  opacity: 0;
+}
+
+.play-btn.playing .play-shape {
+  opacity: 0;
+}
+
+.play-btn.playing .pause-shape {
+  opacity: 1;
 }
 
 /* シークバー（シンプルな太線） */
@@ -722,4 +778,173 @@ body {
     height: 68px;
     font-size: 28px;
   }
+
+  .help-modal {
+    max-width: 500px;
+    border-radius: 20px;
+    margin: auto;
+  }
+}
+
+/* ===== 使い方ガイドモーダル ===== */
+.help-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease-spring), visibility 0.3s;
+  z-index: 300;
+}
+
+.help-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.help-modal {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 16px);
+  max-height: 70vh;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 16px 20px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.35s var(--ease-spring), opacity 0.3s;
+  z-index: 301;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-modal.open {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.help-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.help-modal-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.help-modal-close:active {
+  transform: scale(0.9);
+  background: var(--border-subtle);
+}
+
+.help-modal-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 4px 16px;
+}
+
+.help-modal-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.help-modal-body::-webkit-scrollbar-thumb {
+  background: var(--text-faint);
+  border-radius: 2px;
+}
+
+.help-section {
+  margin-bottom: 20px;
+}
+
+.help-section:last-child {
+  margin-bottom: 0;
+}
+
+.help-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.help-list li {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 6px;
+  padding-left: 14px;
+  position: relative;
+}
+
+.help-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--text-far);
+}
+
+.help-list code {
+  background: var(--bg-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text);
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.help-download-btn {
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.help-download-btn:active {
+  transform: scale(0.96);
+  background: var(--border-subtle);
 }

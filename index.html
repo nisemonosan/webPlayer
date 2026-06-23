@@ -11,7 +11,10 @@
 </head>
 <body>
   <header class="app-header">
-    <h1>うぇっぷ</h1>
+    <div class="header-row">
+      <h1>うぇっぷ</h1>
+      <button class="help-btn" id="help-btn" aria-label="使い方">?</button>
+    </div>
     <div class="file-section">
       <label class="file-btn">
         <input type="file" id="mp3-input" accept="audio/mpeg,.mp3,audio/*" hidden>
@@ -39,7 +42,10 @@
 
       <div class="seek-row">
         <button id="play-btn" class="play-btn" disabled aria-label="再生">
-          <span id="play-icon">▶</span>
+          <svg class="play-icon" id="play-icon" width="28" height="28" viewBox="0 0 28 28">
+            <path class="play-icon-shape play-shape" d="M9 6 L9 22 L20 14 Z" fill="currentColor"/>
+            <path class="play-icon-shape pause-shape" d="M9 7 L9 21 M19 7 L19 21" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
         </button>
         <div class="seek-wrap">
           <input type="range" id="seek" min="0" max="1000" value="0" step="1" disabled aria-label="シークバー">
@@ -113,6 +119,56 @@
   </div>
 
   <audio id="audio" preload="metadata"></audio>
+
+  <!-- 使い方ガイドモーダル -->
+  <div class="help-backdrop" id="help-backdrop"></div>
+  <div class="help-modal" id="help-modal">
+    <div class="help-modal-handle"></div>
+    <div class="help-modal-header">
+      <span class="help-modal-title">使い方</span>
+      <button class="help-modal-close" id="help-close-btn" aria-label="閉じる">✕</button>
+    </div>
+    <div class="help-modal-body">
+      <section class="help-section">
+        <h2 class="help-section-title">基本操作</h2>
+        <ul class="help-list">
+          <li><strong>MP3読み込み</strong> — 「MP3を選択」ボタンから音楽ファイルを選択</li>
+          <li><strong>歌詞CSV</strong> — 「歌詞CSV」からタイムコード付き歌詞ファイルを読み込むと同期表示</li>
+          <li><strong>再生/停止</strong> — ▶ボタンで再生、もう一度押すと一時停止</li>
+          <li><strong>シーク</strong> — プログレスバーをドラッグして任意位置へ</li>
+          <li><strong>速度変更</strong> — 0.5x〜1.5xで再生速度を調整（ピッチは維持）</li>
+        </ul>
+      </section>
+      <section class="help-section">
+        <h2 class="help-section-title">歌詞機能</h2>
+        <ul class="help-list">
+          <li><strong>同期表示</strong> — 現在再生中の歌詞が強調表示、自動スクロール</li>
+          <li><strong>歌詞タップ</strong> — 歌詞をタップするとその位置から再生</li>
+        </ul>
+      </section>
+      <section class="help-section">
+        <h2 class="help-section-title">メトロノーム</h2>
+        <ul class="help-list">
+          <li><strong>オン/オフ</strong> — トグルスイッチで有効化</li>
+          <li><strong>モードA（カウントイン）</strong> — 拍数分のカウント後に音楽再生、メトロノーム停止</li>
+          <li><strong>モードB（並行）</strong> — 音楽と同時にメトロノーム開始、継続</li>
+          <li><strong>モードC（両方）</strong> — カウントイン後、音楽＋メトロノーム継続</li>
+          <li><strong>設定</strong> — 「メトロノーム」をタップして詳細設定を開く</li>
+          <li><strong>1拍目</strong> — 高音で鳴る（練習用のアンカー）</li>
+        </ul>
+      </section>
+      <section class="help-section">
+        <h2 class="help-section-title">CSV形式</h2>
+        <ul class="help-list">
+          <li><code>mm:ss.xx,歌詞テキスト</code> — タイムコードと歌詞をカンマ区切り</li>
+          <li>例: <code>01:23.45,今日もいい天気</code></li>
+        </ul>
+        <button class="help-download-btn" id="csv-sample-download">
+          <span>サンプルCSVをダウンロード</span>
+        </button>
+      </section>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

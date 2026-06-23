@@ -15,6 +15,13 @@
   const lyricsList = document.getElementById('lyrics-list');
   const lyricsCount = document.getElementById('lyrics-count');
 
+  // 使い方ガイド DOM
+  const helpBtn = document.getElementById('help-btn');
+  const helpBackdrop = document.getElementById('help-backdrop');
+  const helpModal = document.getElementById('help-modal');
+  const helpCloseBtn = document.getElementById('help-close-btn');
+  const csvSampleDownload = document.getElementById('csv-sample-download');
+
   // メトロノーム DOM
   const metronomeToggle = document.getElementById('metronome-toggle');
   const metroOpenBtn = document.getElementById('metro-open-btn');
@@ -376,12 +383,10 @@
 
   // ===== イベント: 音声要素 =====
   audio.addEventListener('play', () => {
-    playIcon.textContent = '⏸';
     playBtn.classList.add('playing');
   });
 
   audio.addEventListener('pause', () => {
-    playIcon.textContent = '▶';
     playBtn.classList.remove('playing');
     if (metronomeEnabled && metronomeModeValue !== 'A') stopMetronome();
   });
@@ -405,7 +410,6 @@
   });
 
   audio.addEventListener('ended', () => {
-    playIcon.textContent = '▶';
     playBtn.classList.remove('playing');
     if (metronomeEnabled && metronomeModeValue !== 'A') stopMetronome();
   });
@@ -520,6 +524,45 @@
   metronomeVolume.addEventListener('input', (e) => {
     metronomeVol = parseInt(e.target.value, 10) / 100;
     metronomeVolumeValue.textContent = e.target.value + '%';
+  });
+
+  // ===== 使い方ガイドモーダル =====
+  function openHelpModal() {
+    helpModal.classList.add('open');
+    helpBackdrop.classList.add('open');
+  }
+  function closeHelpModal() {
+    helpModal.classList.remove('open');
+    helpBackdrop.classList.remove('open');
+  }
+  helpBtn.addEventListener('click', openHelpModal);
+  helpCloseBtn.addEventListener('click', closeHelpModal);
+  helpBackdrop.addEventListener('click', closeHelpModal);
+
+  // ===== サンプルCSVダウンロード =====
+  csvSampleDownload.addEventListener('click', () => {
+    const sampleCSV = `00:00.00,instrumental
+00:03.00,
+00:05.50,♪
+00:08.00,勇気を出して
+00:11.50,一歩踏み出せば
+00:15.00,新しい世界が
+00:18.50,君を待ってる
+00:22.00,
+00:25.00,恐れずに
+00:28.00,信じて進もう
+00:31.50,光の方へ
+00:35.00,
+00:38.50,夢を叶えよう
+00:42.00,今すぐに
+`;
+    const blob = new Blob([sampleCSV], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'サンプル歌詞.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   });
 
   // ===== シークバー進捗更新 =====
